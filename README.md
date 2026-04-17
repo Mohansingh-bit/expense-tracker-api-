@@ -1,45 +1,52 @@
-# Expense Tracker API — v2
+# Expense Tracker API
 
-A production-ready REST API for tracking personal expenses.
-Built with Flask, SQLAlchemy, JWT authentication, and clean layered architecture.
+A REST API for tracking personal expenses built with Flask and SQLAlchemy.
 
 ---
 
-## What's New vs v1
+## Features
 
-| Area | v1 | v2 |
-|---|---|---|
-| Auth | API key (no expiry) | JWT with access + refresh tokens |
-| Password | None | bcrypt hashed |
-| Database | SQLite only | PostgreSQL (SQLite for dev/test) |
-| Money type | Float (rounding errors) | Decimal (exact) |
-| CRUD | No update | Full CRUD with PATCH |
-| Delete | Hard delete | Soft delete (audit trail) |
-| Pagination | None (dumps all records) | Page + per_page on all list endpoints |
-| Categories | Free text | Fixed validated list |
-| Rate limiting | None | Per-endpoint limits |
-| Config | Hardcoded | Dev / Prod / Test configs via .env |
-| Logging | None | Structured logging |
-| API versioning | /api/ | /api/v1/ |
-| Error handling | Partial | Global handlers for 404, 405, 429, 500 |
+- JWT authentication with access + refresh tokens
+- bcrypt password hashing
+- Add, view, update, and delete expenses
+- Soft delete with audit trail
+- Category-based budget limits with warning and exceeded alerts
+- Monthly summary with percentage breakdown per category
+- Pagination on all list endpoints
+- Input validation with meaningful error messages
+- Per-user data isolation
+- Global error handlers
+
+---
+
+## Tech Stack
+
+- **Flask** — web framework
+- **Flask-SQLAlchemy** — ORM
+- **Flask-JWT-Extended** — JWT authentication
+- **Flask-Limiter** — rate limiting
+- **bcrypt** — password hashing
+- **SQLite** — development database
+- **PostgreSQL** — production database
+- **pytest** — 28 tests
 
 ---
 
 ## Project Structure
 
 ```
-expense_tracker_api/
+expense_tracker/
 ├── app/
-│   ├── app.py          # App factory with logging + error handlers
+│   ├── app.py          # App factory, config, error handlers
 │   ├── config.py       # Dev / Prod / Test config classes
-│   ├── models.py       # ORM models with Decimal types + soft delete
-│   ├── services.py     # All business logic
-│   ├── routes.py       # Thin HTTP layer, versioned under /api/v1
-│   ├── validators.py   # Input validation including PATCH validator
-│   ├── auth.py         # bcrypt + JWT token helpers
+│   ├── models.py       # User, Expense, BudgetLimit models
+│   ├── services.py     # Business logic layer
+│   ├── routes.py       # API endpoints
+│   ├── validators.py   # Input validation
+│   ├── auth.py         # JWT + bcrypt helpers
 │   └── extensions.py   # db, jwt, limiter instances
 ├── tests/
-│   └── test_api.py     # 30+ tests covering all endpoints
+│   └── test_api.py     # 28 pytest tests
 ├── .env.example
 ├── requirements.txt
 └── README.md
@@ -50,13 +57,13 @@ expense_tracker_api/
 ## Setup
 
 ```bash
-git clone <repo>
-cd expense_tracker_api
+git clone https://github.com/Mohansingh-bit/expense-tracker-api-
+cd expense-tracker-api-
 
 pip install -r requirements.txt
 
 cp .env.example .env
-# Edit .env with your DB URL and JWT secret
+# Edit .env with your JWT secret
 
 cd app
 python app.py
@@ -68,14 +75,13 @@ Server runs at `http://127.0.0.1:5000`
 
 ## Authentication
 
-This API uses **JWT (JSON Web Tokens)**.
+Register to get a JWT token, then send it in every request header:
 
-1. Register → get `access_token` + `refresh_token`
-2. Send `access_token` in every request header:
-   ```
-   Authorization: Bearer <access_token>
-   ```
-3. Access tokens expire in **1 hour**. Use `/api/v1/refresh` with your refresh token to get a new one without logging in again.
+```
+Authorization: Bearer <access_token>
+```
+
+Access tokens expire in 1 hour. Use `/api/v1/refresh` with your refresh token to get a new one.
 
 ---
 
@@ -84,27 +90,27 @@ This API uses **JWT (JSON Web Tokens)**.
 ### Auth
 
 | Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/v1/register` | Create account → returns tokens |
-| POST | `/api/v1/login` | Login → returns tokens |
-| POST | `/api/v1/refresh` | Get new access token (send refresh token) |
+|--------|----------|-------------|
+| POST | `/api/v1/register` | Create account, returns tokens |
+| POST | `/api/v1/login` | Login, returns tokens |
+| POST | `/api/v1/refresh` | Get new access token |
 
 ### Expenses
 
 | Method | Endpoint | Description |
-|---|---|---|
+|--------|----------|-------------|
 | POST | `/api/v1/expenses` | Add expense |
-| GET | `/api/v1/expenses` | List expenses (paginated, filterable) |
+| GET | `/api/v1/expenses` | List expenses (paginated) |
 | GET | `/api/v1/expenses/<id>` | Get single expense |
-| PATCH | `/api/v1/expenses/<id>` | Update expense (any fields) |
+| PATCH | `/api/v1/expenses/<id>` | Update expense |
 | DELETE | `/api/v1/expenses/<id>` | Soft delete expense |
 | GET | `/api/v1/expenses/summary` | Monthly summary + budget alerts |
 
 ### Budgets
 
 | Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/v1/budgets` | Set or update budget limit |
+|--------|----------|-------------|
+| POST | `/api/v1/budgets` | Set budget limit for a category |
 | GET | `/api/v1/budgets` | List all budget limits |
 | DELETE | `/api/v1/budgets/<category>` | Remove budget limit |
 
@@ -116,46 +122,17 @@ This API uses **JWT (JSON Web Tokens)**.
 
 ---
 
-## Pagination
-
-All list endpoints support:
-```
-GET /api/v1/expenses?page=1&per_page=20
-```
-
-Response includes:
-```json
-{
-  "expenses": [...],
-  "pagination": {
-    "page": 1,
-    "per_page": 20,
-    "total": 85,
-    "pages": 5,
-    "has_next": true,
-    "has_prev": false
-  }
-}
-```
-
----
-
 ## Running Tests
 
 ```bash
-cd expense_tracker_api
-python -m pytest tests/test_api.py -v --cov=app
+python -m pytest tests/test_api.py -v
 ```
 
 ---
 
-## Tech Stack
+## Author
 
-- **Flask** — web framework
-- **Flask-SQLAlchemy** — ORM
-- **Flask-JWT-Extended** — JWT auth
-- **Flask-Limiter** — rate limiting
-- **bcrypt** — password hashing
-- **PostgreSQL** — production database
-- **SQLite** — development/testing
-- **pytest** — testing
+**Mohan Singh**
+- GitHub: [github.com/Mohansingh-bit](https://github.com/Mohansingh-bit)
+- LinkedIn: [linkedin.com/in/mohansingh-8b8a612a6](https://linkedin.com/in/mohansingh-8b8a612a6)
+- Portfolio: [portfolio-c68g.onrender.com](https://portfolio-c68g.onrender.com)
